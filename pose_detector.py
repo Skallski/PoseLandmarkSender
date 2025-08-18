@@ -3,7 +3,7 @@ import mediapipe as mp
 
 
 class PoseDetector:
-    def __init__(self, drawLandmarks = True):
+    def __init__(self):
         self.mp_pose = mp.solutions.pose
         self.pose = self.mp_pose.Pose(
             static_image_mode = False,
@@ -14,7 +14,6 @@ class PoseDetector:
         )
 
         self.drawer = mp.solutions.drawing_utils
-        self.drawLandmarks = drawLandmarks
 
     def process_frame(self, frame):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -30,14 +29,17 @@ class PoseDetector:
                     "visibility": landmark.visibility
                 })
 
-            if self.drawLandmarks:
-                self.drawer.draw_landmarks(
-                    frame, 
-                    results.pose_landmarks, 
-                    self.mp_pose.POSE_CONNECTIONS
-                )
+        return landmarks_data, results
+    
+    def draw_landmarks(self, frame, results):
+        if results:
+            self.drawer.draw_landmarks(
+                frame,
+                results.pose_landmarks,
+                self.mp_pose.POSE_CONNECTIONS
+            )
 
-        return landmarks_data, frame
+        return frame
 
     def close(self):
         self.pose.close()

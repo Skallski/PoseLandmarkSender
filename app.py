@@ -4,14 +4,14 @@ import time
 import platform
 from pose_detector import PoseDetector
 from udp_json_sender import UdpJsonSender
+from pose_payload_builder import PosePayloadBuilder
 
 
 class PoseApp:
-    LANDMARK_VISIBILITY_THRESHOLD = 0.5
-
-    def __init__(self, udp_ip = "127.0.0.1", udp_port = 5005, cam_index = 0, previewMode = True):
+    def __init__(self, udp_ip = "127.0.0.1", udp_port = 5005, cam_index = 0, preview_mode = True):
         self.detector = PoseDetector()
         self.sender = UdpJsonSender(udp_ip, udp_port)
+        self.payload_builder = PosePayloadBuilder()
 
         # choose backend depending on OS
         os_name = platform.system().lower()
@@ -27,12 +27,12 @@ class PoseApp:
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
         self.cap.set(cv2.CAP_PROP_FPS, 30)
 
-        self.previewMode = previewMode
+        self.preview_Mode = preview_mode
         self.fps_counter_last_time = 0
 
     def run(self):
         if  self.cap.isOpened():
-            print(f"Application {'[preview mode]' if self.previewMode else ''} started successfuly")
+            print(f"Application {'[preview]' if self.preview_Mode else '[no preview]'} started successfuly")
         else:
             print("Application start error: Cannot open camera!")
             return
@@ -42,20 +42,21 @@ class PoseApp:
             if not ret:
                 print("Camera frame is empty")
                 break
-            
-            landmarks, output_frame = self.detector.process_frame(frame, self.previewMode)
-            if not landmarks:
-                continue
 
-            payload = self._format_landmarks_payload(landmarks)
-            if payload:
-                self.sender.send(payload)
+            landmarks, results = self.detector.process_frame(frame)
+            has_landmarks = bool(landmarks)
 
-            if self.previewMode:
-                self._show_frame(output_frame, showfps = True)
+            if has_landmarks:
+                payload = self.payload_builder.build(landmarks, frame)
+                if payload:
+                    self.sender.send(payload)
 
-            if cv2.waitKey(1) & 0xFF == 27: # ESC
-                break
+            if self.preview_Mode:
+                self._show_preview(frame, results, show_fps = True, show_landmarks = has_landmarks)
+
+                # ESC - exit
+                if cv2.waitKey(1) & 0xFF == 27:
+                    break
 
         self._cleanup()
 
@@ -65,27 +66,8 @@ class PoseApp:
         self.detector.close()
         self.sender.close()
 
-    def _format_landmarks_payload(self, landmarks):
-        """Returns dict: {'pts': [[x,y,z], ...]} or None."""
-        if not landmarks:
-            return None
-        
-        pts = []
-        for lm in landmarks:
-            if float(lm.get("visibility", 1.0)) < self.LANDMARK_VISIBILITY_THRESHOLD:
-                continue
-
-            x = round(float(lm["x"]), 4)
-            y = round(float(lm["y"]), 4)
-            z = round(float(lm["z"]), 4)
-            pts.append([x, y, z])
-            
-        return {"pts": pts} if pts else None
-
-    def _show_frame(self, frame, showfps = True):
-        cv2.imshow("PoseTrack (preview mode)", frame)
-
-        if showfps:
+    def _show_preview(self, frame, results, show_fps : bool, show_landmarks : bool):
+        if show_fps:
             curr_time = time.time()
             fps = 1 / (curr_time - self.fps_counter_last_time) if self.fps_counter_last_time else 0
             self.fps_counter_last_time = curr_time
@@ -93,6 +75,11 @@ class PoseApp:
                 frame, f"FPS: {int(fps)}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
             )
+
+        if show_landmarks:
+            frame = self.detector.draw_landmarks(frame, results)
+
+        cv2.imshow("Landmark detection", frame)
 
 
 if __name__ == "__main__":
@@ -103,6 +90,6 @@ if __name__ == "__main__":
         udp_ip=cfg.get("udp_ip", "127.0.0.1"),
         udp_port=cfg.get("udp_port", 5005),
         cam_index=cfg.get("cam_index", 0),
-        previewMode=cfg.get("previewMode", True)
+        preview_mode=cfg.get("previewMode", True)
     )
     app.run()

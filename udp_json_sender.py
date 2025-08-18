@@ -10,7 +10,7 @@ class UdpJsonSender:
     def send(self, data: dict):
         try:
             message = json.dumps(data).encode('utf-8')
-            self.sock.sendtom(message, self.address)
+            self.sock.sendto(message, self.address)
         except Exception as e:
             print(f"Error while sending {e}")
 
