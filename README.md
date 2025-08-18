@@ -1,6 +1,5 @@
 # Pose Landmark Sender
 Real-time landmark detection and transmission over UDP
-# SerialPortReader
 
 <p align="center">
 	<img alt="package.json version" src="https://img.shields.io/badge/version-1.1-blue" />
