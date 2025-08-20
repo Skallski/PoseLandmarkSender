@@ -1,7 +1,9 @@
 import json
+import sys
+import os
+import platform
 import cv2
 import time
-import platform
 from pose_detector import PoseDetector
 from udp_json_sender import UdpJsonSender
 from pose_payload_builder import PosePayloadBuilder
@@ -83,13 +85,20 @@ class PoseApp:
 
 
 if __name__ == "__main__":
-    with open("config.json", "r") as f:
+    if getattr(sys, 'frozen', False):
+        base_path = os.path.dirname(sys.executable)
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    config_path = os.path.join(base_path, "config.json")
+
+    with open(config_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
 
     app = PoseApp(
         udp_ip=cfg.get("udp_ip", "127.0.0.1"),
         udp_port=cfg.get("udp_port", 5005),
         cam_index=cfg.get("cam_index", 0),
-        preview_mode=cfg.get("previewMode", True)
+        preview_mode=cfg.get("preview_mode", True)
     )
     app.run()

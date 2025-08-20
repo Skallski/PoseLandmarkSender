@@ -2,5 +2,5 @@
     "udp_ip": "127.0.0.1",
     "udp_port": 5005,
     "cam_index": 0,
-    "previewMode": true
+    "preview_mode": true
 }
