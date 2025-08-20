@@ -18,3 +18,19 @@ Real-time landmark detection and transmission over UDP
 ### Introduction
 Real-time pose landmark detection from webcam input using [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).
 Detected landmarks and captured frames are transmitted as JSON over UDP.
+
+### Platforms:
+<p align="center">
+	<img alt="Windows" src="https://img.shields.io/badge/Windows-Stable-28a745?style=for-the-badge&logo=windows&logoColor=white" />
+	<img alt="macOS" src="https://img.shields.io/badge/macOS-In%20Progress-FFD700?style=for-the-badge&logo=apple&logoColor=white" />
+	<img alt="Linux" src="https://img.shields.io/badge/Linux-Not%20Supported-CC0000?style=for-the-badge&logo=linux&logoColor=white" />
+</p>
+
+### Instalation
+You can either **download a prebuilt release** from the [Releases](../../releases) page  
+or **build from source**:
+
+1. Install the required libraries from the `requirements.txt` file  
+2. Build the project using the appropriate script:  
+   - On **Windows**, run `build.ps1`  
+   - On **macOS**, run `build.sh`
