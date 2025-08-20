@@ -16,5 +16,5 @@ Real-time landmark detection and transmission over UDP
 </p>
 
 ### Introduction
-Real-time pose and landmark detection from webcam input using MediaPipe.
+Real-time pose and landmark detection from webcam input using [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).
 Detected landmarks and captured frames are transmitted in JSON format over UDP.
