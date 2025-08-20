@@ -1,5 +1,5 @@
 # Pose Landmark Sender
-Real-time landmark detection and transmission over UDP
+Real-time pose landmark detection and transmission over UDP
 
 <p align="center">
 	<img alt="package.json version" src="https://img.shields.io/badge/version-v1.2-blue" />
