@@ -2,7 +2,7 @@
 Real-time landmark detection and transmission over UDP
 
 <p align="center">
-	<img alt="package.json version" src="https://img.shields.io/badge/version-1.1-blue" />
+	<img alt="package.json version" src="https://img.shields.io/badge/version-v1.2-blue" />
 	<a href="https://github.com/Skallski/PoseLandmarkSender/issues">
 		<img alt="GitHub issues" src ="https://img.shields.io/github/issues/Skallski/PoseLandmarkSender" />
 	</a>
