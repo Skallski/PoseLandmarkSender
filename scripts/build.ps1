@@ -12,7 +12,7 @@ if (-not (Test-Path $mpModules)) {
 }
 
 Write-Host "==== Building application with PyInstaller ====" -ForegroundColor Yellow
-.\.venv\Scripts\python.exe -m PyInstaller --onefile --noconsole app.py `
+.\.venv\Scripts\python.exe -m PyInstaller --onefile --noconsole --name PoseLandmarkSender app.py `
     --add-data "$mpModules;mediapipe\modules"
 
 Write-Host "==== Copying config.json to dist ====" -ForegroundColor Yellow
@@ -25,5 +25,5 @@ if (Test-Path "config.json") {
 Write-Host ""
 Write-Host "=======================================" -ForegroundColor Green
 Write-Host " Build finished successfully!" -ForegroundColor Green
-Write-Host " app.exe is located in the 'dist' folder" -ForegroundColor Green
+Write-Host " PoseLandmarkSender.exe is located in the 'dist' folder" -ForegroundColor Green
 Write-Host "=======================================" -ForegroundColor Green

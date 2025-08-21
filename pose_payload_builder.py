@@ -12,30 +12,39 @@ class PosePayloadBuilder:
         quality_floor: int = 20,
         scales: tuple[float, ...] = (0.75, 0.5, 0.35, 0.25),
         quality_steps: tuple[int, ...] = (70, 60, 50, 40, 30),
+        num_landmarks: int = 33,
     ):
         self.jpeg_quality = jpeg_quality
         self.max_size = max_size
         self.quality_floor = quality_floor
         self.scales = scales
         self.quality_steps = quality_steps
+        self.num_landmarks = num_landmarks
 
     def _format_landmarks(self, landmarks):
-        """Format landmarks into format: {"pts":[{x,y,z},...]}"""
-        if not landmarks:
-            return None
+        """
+        Format landmarks into format: {"pts":[{x,y,z},...]}
         
+        Always emit a fixed-length array (num_landmarks). For any landmark that is
+        missing or has visibility below threshold, output (-1, -1, -1).
+        The order matches MediaPipe's PoseLandmark index order.
+        """
         pts = []
-        for lm in landmarks:
-            if float(lm.get("visibility", 1.0)) < self.LANDMARK_VISIBILITY_THRESHOLD:
-                continue
+        for i in range(self.num_landmarks):
+            if landmarks and i < len(landmarks):
+                lm = landmarks[i]
+                vis = float(lm.get("visibility", 0.0))
+                if vis >= self.LANDMARK_VISIBILITY_THRESHOLD:
+                    x = round(float(lm.get("x", -1)), 4)
+                    y = round(float(lm.get("y", -1)), 4)
+                    z = round(float(lm.get("z", -1)), 4)
+                else:
+                    x = y = z = -1
+            else:
+                x = y = z = -1
+            pts.append({"x": x, "y": y, "z": z})
 
-            pts.append({
-                "x": round(float(lm["x"]), 4),
-                "y": round(float(lm["y"]), 4),
-                "z": round(float(lm["z"]), 4),
-            })
-
-        return {"pts": pts} if pts else None
+        return {"pts": pts}
 
     def _encode_frame_b64(self, frame) -> str | None:
         """Encode an OpenCV frame to Base64 JPEG with iterative fallback on size."""
@@ -67,9 +76,7 @@ class PosePayloadBuilder:
         return None
 
     def build(self, landmarks, frame = None):
-        payload = self._format_landmarks(landmarks)
-        if not payload:
-            return None
+        payload = self._format_landmarks(landmarks or [])
 
         if frame is not None:
             b64 = self._encode_frame_b64(frame)

@@ -1,30 +1,46 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
-echo "==== Cleaning old build folders ===="
-rm -rf build dist
+YELLOW="\033[33m"; GREEN="\033[32m"; RED="\033[31m"; RESET="\033[0m"
 
-echo "==== Detecting mediapipe modules path ===="
-mpModules=$(./.venv/bin/python3 -c "import mediapipe, pathlib; print(pathlib.Path(mediapipe.__file__).parent / 'modules')")
-if [ ! -d "$mpModules" ]; then
-    echo "WARNING: mediapipe modules folder not found. Build may fail!"
+echo -e "${YELLOW}==== Cleaning old build folders ====${RESET}"
+rm -rf build dist || true
+
+echo -e "${YELLOW}==== Detecting mediapipe modules path ====${RESET}"
+PYTHON="./.venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+  PYTHON="python3"
 fi
 
-echo "==== Building application with PyInstaller ===="
-./.venv/bin/python3 -m PyInstaller --onefile --noconsole app.py \
-    --add-data "$mpModules:mediapipe/modules"
+mpModules="$($PYTHON -c 'import mediapipe, pathlib; print(pathlib.Path(mediapipe.__file__).parent / "modules")' || true)"
+if [[ -z "${mpModules:-}" || ! -d "$mpModules" ]]; then
+  echo -e "${RED}WARNING: mediapipe modules folder not found. Build may fail!${RESET}"
+fi
 
-echo "==== Copying config.json to dist ===="
-if [ -f "config.json" ]; then
-    cp config.json dist/config.json
+echo -e "${YELLOW}==== Building application with PyInstaller ====${RESET}"
+"$PYTHON" -m PyInstaller --onefile --windowed --name PoseLandmarkSender app.py \
+  --add-data "$mpModules:mediapipe/modules"
+
+echo -e "${YELLOW}==== Copying config.json to dist ====${RESET}"
+if [[ -f "config.json" ]]; then
+  mkdir -p dist
+  cp -f "config.json" "dist/config.json"
 else
-    echo "WARNING: config.json not found, skipping copy."
+  echo -e "${YELLOW}WARNING: config.json not found, skipping copy.${RESET}"
 fi
 
-echo ""
-echo "======================================="
-echo " Build finished successfully!"
-echo " app executable is located in the 'dist' folder"
-echo "======================================="
+echo
+echo -e "${GREEN}=======================================${RESET}"
+echo -e "${GREEN} Build finished successfully!${RESET}"
+
+if [[ -d "dist/PoseLandmarkSender.app" ]]; then
+  echo -e "${GREEN} PoseLandmarkSender.app is located in the 'dist' folder${RESET}"
+elif [[ -f "dist/PoseLandmarkSender" ]]; then
+  echo -e "${GREEN} PoseLandmarkSender is located in the 'dist' folder${RESET}"
+else
+  echo -e "${YELLOW} Build done, but no known artifact found. Check the 'dist' folder.${RESET}"
+fi
+echo -e "${GREEN}=======================================${RESET}"

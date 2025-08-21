@@ -10,6 +10,8 @@ from pose_payload_builder import PosePayloadBuilder
 
 
 class PoseApp:
+    WINDOW_NAME = "Landmark detection"
+
     def __init__(self, udp_ip = "127.0.0.1", udp_port = 5005, cam_index = 0, preview_mode = True):
         self.detector = PoseDetector()
         self.sender = UdpJsonSender(udp_ip, udp_port)
@@ -46,18 +48,16 @@ class PoseApp:
                 break
 
             landmarks, results = self.detector.process_frame(frame)
-            has_landmarks = bool(landmarks)
-
-            if has_landmarks:
-                payload = self.payload_builder.build(landmarks, frame)
-                if payload:
-                    self.sender.send(payload)
-
+            
+            payload = self.payload_builder.build(landmarks, frame)
+            if payload:
+                self.sender.send(payload)
+            
             if self.preview_Mode:
-                self._show_preview(frame, results, show_fps = True, show_landmarks = has_landmarks)
+                show_landmarks = bool(results and results.pose_landmarks)
+                self._show_preview(frame, results, show_fps = True, show_landmarks = show_landmarks)
 
-                # ESC - exit
-                if cv2.waitKey(1) & 0xFF == 27:
+                if cv2.waitKey(1) & 0xFF == 27 or cv2.getWindowProperty(self.WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1 :
                     break
 
         self._cleanup()
@@ -81,7 +81,7 @@ class PoseApp:
         if show_landmarks:
             frame = self.detector.draw_landmarks(frame, results)
 
-        cv2.imshow("Landmark detection", frame)
+        cv2.imshow(self.WINDOW_NAME, frame)
 
 
 if __name__ == "__main__":
