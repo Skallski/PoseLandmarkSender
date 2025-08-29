@@ -15,10 +15,16 @@ Real-time pose landmark detection and transmission over UDP
 	<img alt="GitHub last commit" src ="https://img.shields.io/github/last-commit/Skallski/PoseLandmarkSender" />
 </p>
 
+---
+
 ### Introduction
-Real-time pose landmark detection from webcam input using [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).
-Detection runs on CPU.
-Detected landmarks and lightweight frame metadata are serialized to JSON and streamed over UDP.
+Pose Landmark Sender performs **real-time pose landmark detection** from webcam input using [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).  
+
+- Runs entirely on **CPU**  
+- Outputs **detected landmarks** + lightweight frame metadata  
+- Data is serialized to **JSON** and streamed via **UDP**  
+
+---
 
 ### Platforms:
 <p align="center">
@@ -27,19 +33,22 @@ Detected landmarks and lightweight frame metadata are serialized to JSON and str
 	<img alt="Linux" src="https://img.shields.io/badge/Linux-Not%20Supported-CC0000?style=for-the-badge&logo=linux&logoColor=white" />
 </p>
 
+---
+
 ### Instalation
-You can either download a prebuilt release from the [Releases](../../releases) page  
-or build from source:
+You can either download a prebuilt release from the [Releases](../../releases) page or build from source:
 
 #### Building from source
 **Prerequisites**
-- Python 3.8+ and `pip` on your PATH
+- `Python 3.8+` and `pip` on your PATH
 
 **(Recommended) Create a virtual environment**
 ```bash
 python -m venv .venv
+
 # Windows
 .\.venv\Scripts\activate
+
 # macOS/Linux
 source .venv/bin/activate
 ```
@@ -55,10 +64,13 @@ pip install -r requirements.txt
 # Windows
 py -m PyInstaller --onefile --console --clean --name PoseLandmarkSender app.py
 copy config.json dist\
+
 # macOS/Linux
 python -m PyInstaller --onefile --windowed --clean --name PoseLandmarkSender app.py
 cp config.json dist/
 ```
+
+---
 
 ### Configuration (config.json)
 > **Note:** `config.json` must be placed in the same directory as the executable.
@@ -79,26 +91,26 @@ cp config.json dist/
   "preview_mode": true
 }
 ```
-`udp_ip`, `udp_port` — target address/port for UDP packets.
+| Parameter                       | Description                                                           |
+|---------------------------------|-----------------------------------------------------------------------|
+| `udp_ip`                        | Target IP address for UDP packets                                     |
+| `udp_port`                      | Target port for UDP packets                                           |
+| `cam_index`                     | OS camera index (0 = default webcam)                                  |
+| `cam_requested_width`           | Requested capture width (may be capped by the camera)                  |
+| `cam_requested_height`          | Requested capture height (may be capped by the camera)                 |
+| `cam_requested_fps`             | Requested capture FPS (may be capped by the camera)                    |
+| `pose_model_complexity`         | Model size/accuracy trade-off: 0 (fastest), 1 (default), 2 (most accurate) |
+| `min_pose_detection_confidence` | Minimum confidence threshold to accept a person detection              |
+| `min_landmark_tracking_confidence` | Minimum confidence threshold to accept landmark tracking updates    |
+| `preview_mode`                  | Show a local preview window when `true`                               |
 
-`cam_index` — OS camera index (0 = default webcam).
-
-`cam_requested_width`, `cam_requested_height`, `cam_requested_fps` — requested capture settings (may be capped by the camera).
-
-`pose_model_complexity` — model size/accuracy trade-off: 0, 1, or 2.
-
-`min_pose_detection_confidence` — threshold to accept a person detection.
-
-`min_landmark_tracking_confidence` — threshold to accept landmark tracking updates.
-
-`preview_mode` — show a local preview window when true.
+---
 
 ### UDP payload
-The payload contains per-frame metadata (`frame_b64`) - a Base64-encoded JPEG of the current frame - and an array of pose landmarks. 
+The payload contains pose landmarks (`pts`) - an array of (`x`, `y`, `z`) coordinates - and per-frame metadata (`frame_b64`) - a Base64-encoded JPEG of the current frame.  
 
 Landmark coordinates follow MediaPipe’s image-normalized convention (`x`, `y` ∈ `[0, 1]`; `z` is normalized depth, negative in front of the camera).
-
-If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.
+If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.  
 
 **Example**
 ```json
