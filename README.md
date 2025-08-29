@@ -16,8 +16,9 @@ Real-time pose landmark detection and transmission over UDP
 </p>
 
 ### Introduction
-Real-time pose landmark detection from webcam input using [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).
-Detected landmarks and captured frames are transmitted as JSON over UDP.
+Real-time pose landmark detection from webcam input using [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).
+Detection runs on CPU.
+Detected landmarks and lightweight frame metadata are serialized to JSON and streamed over UDP.
 
 ### Platforms:
 <p align="center">
@@ -27,10 +28,91 @@ Detected landmarks and captured frames are transmitted as JSON over UDP.
 </p>
 
 ### Instalation
-You can either **download a prebuilt release** from the [Releases](../../releases) page  
-or **build from source**:
+You can either download a prebuilt release from the [Releases](../../releases) page  
+or build from source:
 
-1. Install the required libraries from the `requirements.txt` file  
-2. Build the project using the appropriate script:  
-   - On **Windows**, run `build.ps1`  
-   - On **macOS**, run `build.sh`
+#### Building from source
+**Prerequisites**
+- Python 3.8+ and `pip` on your PATH
+
+**(Recommended) Create a virtual environment**
+```bash
+python -m venv .venv
+# Windows
+.\.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+```
+
+**Install dependencies**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**Build a standalone binary (Pyinstaller)**
+```bash
+# Windows
+py -m PyInstaller --onefile --console --clean --name PoseLandmarkSender app.py
+copy config.json dist\
+# macOS/Linux
+python -m PyInstaller --onefile --windowed --clean --name PoseLandmarkSender app.py
+cp config.json dist/
+```
+
+### Configuration (config.json)
+> **Note:** `config.json` must be placed in the same directory as the executable.
+```json
+{
+  "udp_ip": "127.0.0.1",
+  "udp_port": 5005,
+
+  "cam_index": 0,
+  "cam_requested_width": 640,
+  "cam_requested_height": 360,
+  "cam_requested_fps": 30,
+
+  "pose_model_complexity": 1,
+  "min_pose_detection_confidence": 0.5,
+  "min_landmark_tracking_confidence": 0.5,
+
+  "preview_mode": true
+}
+```
+`udp_ip`, `udp_port` — target address/port for UDP packets.
+
+`cam_index` — OS camera index (0 = default webcam).
+
+`cam_requested_width`, `cam_requested_height`, `cam_requested_fps` — requested capture settings (may be capped by the camera).
+
+`pose_model_complexity` — model size/accuracy trade-off: 0, 1, or 2.
+
+`min_pose_detection_confidence` — threshold to accept a person detection.
+
+`min_landmark_tracking_confidence` — threshold to accept landmark tracking updates.
+
+`preview_mode` — show a local preview window when true.
+
+### UDP payload
+The payload contains per-frame metadata (`frame_b64`) - a Base64-encoded JPEG of the current frame - and an array of pose landmarks. 
+
+Landmark coordinates follow MediaPipe’s image-normalized convention (`x`, `y` ∈ `[0, 1]`; `z` is normalized depth, negative in front of the camera).
+
+If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.
+
+**Example**
+```json
+{
+  "pts": [
+    { "x": 0.5123, "y": 0.4132, "z": -0.0123 },
+    { "x": 0.5234, "y": 0.4021, "z": -0.0156 },
+    { "x": 0.5401, "y": 0.3950, "z": -0.0180 },
+    { "x": 0.5589, "y": 0.3921, "z": -0.0205 },
+    { "x": 0.5776, "y": 0.3942, "z": -0.0230 },
+    { "x": 0.5950, "y": 0.4018, "z": -0.0257 },
+    { "x": -1,     "y": -1,     "z": -1 },
+	...
+  ],
+  "frame_b64": "/9j/4AAQSkZJRgABAQAAAQABAAD/..."
+}
+```

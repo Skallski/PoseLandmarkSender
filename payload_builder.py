@@ -1,25 +1,26 @@
 import base64
 import cv2
+from typing import Optional
 
 
-class PosePayloadBuilder:
-    LANDMARK_VISIBILITY_THRESHOLD = 0.5
+class PayloadBuilder:
+    NUM_LANDMARKS = 33
 
     def __init__(
         self,
+        landmark_visibility_threshold: float = 0.5,
         jpeg_quality: int = 70,
         max_size: int = 60 * 1024,
         quality_floor: int = 20,
         scales: tuple[float, ...] = (0.75, 0.5, 0.35, 0.25),
-        quality_steps: tuple[int, ...] = (70, 60, 50, 40, 30),
-        num_landmarks: int = 33,
-    ):
+        quality_steps: tuple[int, ...] = (70, 60, 50, 40, 30)
+    ):        
+        self.landmark_visibility_threshold = landmark_visibility_threshold
         self.jpeg_quality = jpeg_quality
         self.max_size = max_size
         self.quality_floor = quality_floor
         self.scales = scales
         self.quality_steps = quality_steps
-        self.num_landmarks = num_landmarks
 
     def _format_landmarks(self, landmarks):
         """
@@ -30,11 +31,11 @@ class PosePayloadBuilder:
         The order matches MediaPipe's PoseLandmark index order.
         """
         pts = []
-        for i in range(self.num_landmarks):
+        for i in range(self.NUM_LANDMARKS):
             if landmarks and i < len(landmarks):
                 lm = landmarks[i]
                 vis = float(lm.get("visibility", 0.0))
-                if vis >= self.LANDMARK_VISIBILITY_THRESHOLD:
+                if vis >= self.landmark_visibility_threshold:
                     x = round(float(lm.get("x", -1)), 4)
                     y = round(float(lm.get("y", -1)), 4)
                     z = round(float(lm.get("z", -1)), 4)
@@ -46,7 +47,7 @@ class PosePayloadBuilder:
 
         return {"pts": pts}
 
-    def _encode_frame_b64(self, frame) -> str | None:
+    def _encode_frame_b64(self, frame) -> Optional[str]:
         """Encode an OpenCV frame to Base64 JPEG with iterative fallback on size."""
 
         def _try_encode(img, q):
