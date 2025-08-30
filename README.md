@@ -2,17 +2,13 @@
 Real-time pose landmark detection and transmission over UDP
 
 <p align="center">
-	<img alt="package.json version" src="https://img.shields.io/badge/version-v1.2-blue" />
-	<a href="https://github.com/Skallski/PoseLandmarkSender/issues">
-		<img alt="GitHub issues" src ="https://img.shields.io/github/issues/Skallski/PoseLandmarkSender" />
+	<a href="https://github.com/Skallski/PoseLandmarkSender/releases/latest">
+  		<img alt="latest release" src="https://img.shields.io/github/v/release/Skallski/PoseLandmarkSender?sort=semver&label=latest%20release" />
 	</a>
-	<a href="https://github.com/Skallu0711/PoseLandmarkSender/pulls">
-		<img alt="GitHub pull requests" src ="https://img.shields.io/github/issues-pr/Skallski/PoseLandmarkSender" />
-	</a>
+		<img alt="GitHub last commit" src ="https://img.shields.io/github/last-commit/Skallski/PoseLandmarkSender" />
 	<a href="https://github.com/Skallu0711/PoseLandmarkSender/blob/master/LICENSE">
 		<img alt="GitHub license" src ="https://img.shields.io/github/license/Skallski/PoseLandmarkSender" />
 	</a>
-	<img alt="GitHub last commit" src ="https://img.shields.io/github/last-commit/Skallski/PoseLandmarkSender" />
 </p>
 
 ---
