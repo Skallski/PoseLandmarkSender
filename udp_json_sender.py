@@ -7,8 +7,9 @@ class UdpJsonSender:
     def __init__(self, ip: str, port: int):
         self.address = (ip, port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+        
         self.log = Logger.get()
+        self.log.info(f"{UdpJsonSender.__name__} initialized successfully")
 
     def send(self, data: dict):
         try:
@@ -19,3 +20,5 @@ class UdpJsonSender:
 
     def close(self):
         self.sock.close()
+        self.log.info(f"{UdpJsonSender.__name__} closed successfully")
+

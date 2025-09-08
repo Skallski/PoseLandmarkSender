@@ -2,17 +2,13 @@
 Real-time pose landmark detection and transmission over UDP
 
 <p align="center">
-	<img alt="package.json version" src="https://img.shields.io/badge/version-v1.2-blue" />
-	<a href="https://github.com/Skallski/PoseLandmarkSender/issues">
-		<img alt="GitHub issues" src ="https://img.shields.io/github/issues/Skallski/PoseLandmarkSender" />
+	<a href="https://github.com/Skallski/PoseLandmarkSender/releases/latest">
+  		<img alt="latest release" src="https://img.shields.io/github/v/release/Skallski/PoseLandmarkSender?sort=semver&label=latest%20release" />
 	</a>
-	<a href="https://github.com/Skallu0711/PoseLandmarkSender/pulls">
-		<img alt="GitHub pull requests" src ="https://img.shields.io/github/issues-pr/Skallski/PoseLandmarkSender" />
-	</a>
+		<img alt="GitHub last commit" src ="https://img.shields.io/github/last-commit/Skallski/PoseLandmarkSender" />
 	<a href="https://github.com/Skallu0711/PoseLandmarkSender/blob/master/LICENSE">
 		<img alt="GitHub license" src ="https://img.shields.io/github/license/Skallski/PoseLandmarkSender" />
 	</a>
-	<img alt="GitHub last commit" src ="https://img.shields.io/github/last-commit/Skallski/PoseLandmarkSender" />
 </p>
 
 ---
@@ -21,7 +17,7 @@ Real-time pose landmark detection and transmission over UDP
 Pose Landmark Sender performs **real-time pose landmark detection** from webcam input using [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).  
 
 - Runs entirely on **CPU**  
-- Outputs **detected landmarks** + lightweight frame metadata  
+- Outputs **detected landmarks** and **base64 encoded frame**
 - Data is serialized to **JSON** and streamed via **UDP**  
 
 ---
@@ -107,24 +103,23 @@ cp config.json dist/
 ---
 
 ### UDP payload
-The payload contains pose landmarks (`pts`) - an array of (`x`, `y`, `z`) coordinates - and per-frame metadata (`frame_b64`) - a Base64-encoded JPEG of the current frame.  
+Sender emits *two independent JSON packets per iteration*: one with *landmarks* and one with the *frame*.
+* 33 pose *Landmarks*: `{"pts": [{x, y, z}, ...]}` in MediaPipe , image-normalized convention (`x, y ∈ [0, 1]`. `z` is normalized depth, negative in front of the camera). If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.  
+* *Frame* metadata `{"frame_b64":"<base64 JPEG>"}` - a Base64-encoded JPEG of the current frame.  
 
-Landmark coordinates follow MediaPipe’s image-normalized convention (`x`, `y` ∈ `[0, 1]`; `z` is normalized depth, negative in front of the camera).
-If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.  
-
-**Example**
+**Landmarks payload example**
 ```json
 {
   "pts": [
-    { "x": 0.5123, "y": 0.4132, "z": -0.0123 },
-    { "x": 0.5234, "y": 0.4021, "z": -0.0156 },
-    { "x": 0.5401, "y": 0.3950, "z": -0.0180 },
-    { "x": 0.5589, "y": 0.3921, "z": -0.0205 },
-    { "x": 0.5776, "y": 0.3942, "z": -0.0230 },
-    { "x": 0.5950, "y": 0.4018, "z": -0.0257 },
-    { "x": -1,     "y": -1,     "z": -1 },
-	...
-  ],
-  "frame_b64": "/9j/4AAQSkZJRgABAQAAAQABAAD/..."
+    {"x":0.5123,"y":0.4132,"z":-0.0123},
+    {"x":0.5234,"y":0.4021,"z":-0.0156},
+    {"x":-1,"y":-1,"z":-1}
+    ...
+  ]
 }
+```
+
+**Frame payload example**
+```json
+{"frame_b64":"/9j/4AAQSkZJRgABAQAAAQABAAD/..."}
 ```
