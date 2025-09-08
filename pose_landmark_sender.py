@@ -1,7 +1,6 @@
 import platform
 import cv2
 import time
-import signal
 from pose_detector import PoseDetector
 from payload_builder import PayloadBuilder
 from udp_json_sender import UdpJsonSender
@@ -24,8 +23,6 @@ class PoseLandmarkSender:
         min_landmark_tracking_confidence: float = 0.5,
         preview_mode = True,
     ):
-        signal.signal(signal.SIGINT, self._handle_exit)
-        signal.signal(signal.SIGTERM, self._handle_exit)
 
         self.detector = PoseDetector(
             model_complexity = pose_model_complexity, 
@@ -55,12 +52,12 @@ class PoseLandmarkSender:
         self.log = Logger.get()
 
     def run(self):
-        if self.cap.isOpened():
-            self.log.info(f"Application {'[Preview Mode]' if self.preview_mode else '[No Preview]'} started successfully")
-        else:
+        if not self.cap.isOpened():
             self.log.error("Application start error: Cannot open camera!")
             return
-        
+
+        self.log.info(f"Application {'[Preview Mode]' if self.preview_mode else '[No Preview]'} started successfully")
+
         try:
             while self.cap.isOpened():
                 ret, frame = self.cap.read()
@@ -69,16 +66,19 @@ class PoseLandmarkSender:
                     break
 
                 landmarks, results = self.detector.process_frame(frame)
+
+                # send payload
+                landmarks_payload, frame_payload = self.payload_builder.build_payload(landmarks, frame)
+                if landmarks_payload:
+                    self.sender.send(landmarks_payload)
+                if frame_payload:
+                    self.sender.send(frame_payload)
                 
-                payload = self.payload_builder.build(landmarks, frame)
-                if payload:
-                    self.sender.send(payload)
-                
+                # preview
                 if self.preview_mode:
                     show_landmarks = bool(results and results.pose_landmarks)
                     self._show_preview(frame, results, show_fps = True, show_landmarks = show_landmarks)
-                    
-                    if self._close_window():
+                    if self._close_preview_window():
                         break
         finally:
             self._cleanup()
@@ -88,17 +88,7 @@ class PoseLandmarkSender:
         cv2.destroyAllWindows()
         self.detector.close()
         self.sender.close()
-
         self.log.info("Application closed successfully")
-
-    def _handle_exit(self, signum):
-        print(f"Application terminated by signal: {signum}")
-        self._cleanup()
-
-    def _close_window(self) -> bool:
-        key = cv2.waitKey(1) & 0xFF
-        prop = cv2.getWindowProperty(self.WINDOW_NAME, cv2.WND_PROP_VISIBLE)
-        return key == 27 or prop == 0
 
     def _show_preview(
         self, 
@@ -117,3 +107,8 @@ class PoseLandmarkSender:
             frame = self.detector.draw_landmarks(frame, results)
 
         cv2.imshow(self.WINDOW_NAME, frame)
+
+    def _close_preview_window(self) -> bool:
+        key = cv2.waitKey(1) & 0xFF
+        prop = cv2.getWindowProperty(self.WINDOW_NAME, cv2.WND_PROP_VISIBLE)
+        return key == 27 or prop == 0

@@ -30,6 +30,7 @@ class PoseDetector:
         )
 
         self.drawer = mp.solutions.drawing_utils
+        self.log.info(f"{PoseDetector.__name__} initialized successfully")
 
     def process_frame(self, frame):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -61,3 +62,4 @@ class PoseDetector:
 
     def close(self):
         self.pose.close()
+        self.log.info(f"{PoseDetector.__name__} closed successfully")

@@ -1,6 +1,5 @@
 import base64
 import cv2
-from typing import Optional
 
 
 class PayloadBuilder:
@@ -22,20 +21,25 @@ class PayloadBuilder:
         self.scales = scales
         self.quality_steps = quality_steps
 
-    def _format_landmarks(self, landmarks):
+    def build_payload(self, landmarks, frame):
+        landmarks_payload = self._build_landmarks_payload(landmarks)            
+        frame_payload = self._build_frame_payload(frame)
+        return landmarks_payload, frame_payload
+
+    def _build_landmarks_payload(self, landmarks):
         """
-        Format landmarks into format: {"pts":[{x,y,z},...]}
-        
-        Always emit a fixed-length array (num_landmarks). For any landmark that is
-        missing or has visibility below threshold, output (-1, -1, -1).
-        The order matches MediaPipe's PoseLandmark index order.
+        Format landmarks as {"pts":[{x,y,z},...]}.
+
+        Always returns NUM_LANDMARKS items.
+        If missing or low visibility → (-1,-1,-1).
+        Order matches MediaPipe PoseLandmark.
         """
         pts = []
         for i in range(self.NUM_LANDMARKS):
             if landmarks and i < len(landmarks):
                 lm = landmarks[i]
-                vis = float(lm.get("visibility", 0.0))
-                if vis >= self.landmark_visibility_threshold:
+                visibility = float(lm.get("visibility", 0.0))
+                if visibility >= self.landmark_visibility_threshold:
                     x = round(float(lm.get("x", -1)), 4)
                     y = round(float(lm.get("y", -1)), 4)
                     z = round(float(lm.get("z", -1)), 4)
@@ -44,23 +48,23 @@ class PayloadBuilder:
             else:
                 x = y = z = -1
             pts.append({"x": x, "y": y, "z": z})
-
         return {"pts": pts}
 
-    def _encode_frame_b64(self, frame) -> Optional[str]:
-        """Encode an OpenCV frame to Base64 JPEG with iterative fallback on size."""
+    def _build_frame_payload(self, frame):
+        """Build payload with only encoded frame (JPEG→base64)."""
+        if frame is None:
+            return None
 
         def _try_encode(img, q):
-            """Try encoding a frame to JPEG at given quality, return bytes or None."""
             ok, buf = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), int(q)])
             return buf if ok else None
 
-        # Try with og image with default quality
+        # try in og scale and default quality
         buf = _try_encode(frame, self.jpeg_quality)
         if buf is not None and buf.nbytes <= self.max_size:
-            return base64.b64encode(buf).decode("utf-8")
+            return {"frame_b64": base64.b64encode(buf).decode("utf-8")}
 
-        # Fallback: downscale iteratively
+        # fallback: downscale iteratively
         h, w = frame.shape[:2]
         for scale in self.scales:
             new_w, new_h = max(1, int(w * scale)), max(1, int(h * scale))
@@ -72,16 +76,6 @@ class PayloadBuilder:
 
                 buf = _try_encode(resized, q)
                 if buf is not None and buf.nbytes <= self.max_size:
-                    return base64.b64encode(buf).decode("utf-8")
+                    return {"frame_b64": base64.b64encode(buf).decode("utf-8")}
 
         return None
-
-    def build(self, landmarks, frame = None):
-        payload = self._format_landmarks(landmarks or [])
-
-        if frame is not None:
-            b64 = self._encode_frame_b64(frame)
-            if b64 is not None:
-                payload["frame_b64"] = b64
-
-        return payload
