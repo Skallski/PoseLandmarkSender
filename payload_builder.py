@@ -22,8 +22,8 @@ class PayloadBuilder:
         self.quality_steps = quality_steps
 
     def build_payload(self, landmarks, frame):
-        landmarks_payload = self._build_landmarks_payload(self, landmarks)            
-        frame_payload = self._build_frame_payload(self, frame)
+        landmarks_payload = self._build_landmarks_payload(landmarks)            
+        frame_payload = self._build_frame_payload(frame)
         return landmarks_payload, frame_payload
 
     def _build_landmarks_payload(self, landmarks):

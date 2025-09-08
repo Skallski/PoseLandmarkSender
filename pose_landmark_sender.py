@@ -69,16 +69,10 @@ class PoseLandmarkSender:
 
                 # send payload
                 landmarks_payload, frame_payload = self.payload_builder.build_payload(landmarks, frame)
-                
                 if landmarks_payload:
                     self.sender.send(landmarks_payload)
-                else:
-                    self.log.error()
-
                 if frame_payload:
                     self.sender.send(frame_payload)
-                else:
-                    self.log.error()
                 
                 # preview
                 if self.preview_mode:

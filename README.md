@@ -58,11 +58,11 @@ pip install -r requirements.txt
 **Build a standalone binary (Pyinstaller)**
 ```bash
 # Windows
-py -m PyInstaller --onefile --console --clean --name PoseLandmarkSender app.py
+py -m PyInstaller --onefile --noconsole --clean --name PoseLandmarkSender app.py --add-data ".venv\Lib\site-packages\mediapipe\modules;mediapipe\modules"
 copy config.json dist\
 
 # macOS/Linux
-python -m PyInstaller --onefile --windowed --clean --name PoseLandmarkSender app.py
+python -m PyInstaller --onefile --noconsole --clean --name PoseLandmarkSender app.py --add-data ".venv/lib/python3.10/site-packages/mediapipe/modules:mediapipe/modules"
 cp config.json dist/
 ```
 
