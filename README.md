@@ -45,7 +45,7 @@ python -m venv .venv
 # Windows
 .\.venv\Scripts\activate
 
-# macOS/Linux
+# macOS
 source .venv/bin/activate
 ```
 
@@ -63,7 +63,7 @@ py -m PyInstaller --onefile --noconsole --clean \
   --add-data ".venv\Lib\site-packages\mediapipe\modules;mediapipe\modules"
 copy config.json dist\
 
-# macOS/Linux
+# macOS
 python -m PyInstaller --onedir --clean \
   --target-arch arm64 \
   --name PoseLandmarkSender app.py \
