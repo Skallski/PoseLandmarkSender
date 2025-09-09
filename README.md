@@ -58,12 +58,20 @@ pip install -r requirements.txt
 **Build a standalone binary (Pyinstaller)**
 ```bash
 # Windows
-py -m PyInstaller --onefile --noconsole --clean --name PoseLandmarkSender app.py --add-data ".venv\Lib\site-packages\mediapipe\modules;mediapipe\modules"
+py -m PyInstaller --onefile --noconsole --clean \
+  --name PoseLandmarkSender app.py \
+  --add-data ".venv\Lib\site-packages\mediapipe\modules;mediapipe\modules"
+
 copy config.json dist\
 
 # macOS/Linux
-python -m PyInstaller --onefile --noconsole --clean --name PoseLandmarkSender app.py --add-data ".venv/lib/python3.10/site-packages/mediapipe/modules:mediapipe/modules"
-cp config.json dist/
+python -m PyInstaller --onedir --clean \
+  --target-arch arm64 \
+  --name PoseLandmarkSender app.py \
+  --add-data ".venv/lib/python3.11/site-packages/mediapipe/modules:mediapipe/modules"
+
+cp config.json "dist/PoseLandmarkSender.app/Contents/MacOS/"
+xattr -dr com.apple.quarantine "dist/PoseLandmarkSender.app"
 ```
 
 ---
