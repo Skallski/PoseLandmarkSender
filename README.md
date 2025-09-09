@@ -25,7 +25,7 @@ Pose Landmark Sender performs **real-time pose landmark detection** from webcam 
 ### Platforms:
 <p align="center">
 	<img alt="Windows" src="https://img.shields.io/badge/Windows-Stable-28a745?style=for-the-badge&logo=windows&logoColor=white" />
-	<img alt="macOS" src="https://img.shields.io/badge/macOS-In%20Progress-FFD700?style=for-the-badge&logo=apple&logoColor=white" />
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-Stable-28a745?style=for-the-badge&logo=apple&logoColor=white" />
 	<img alt="Linux" src="https://img.shields.io/badge/Linux-Not%20Supported-CC0000?style=for-the-badge&logo=linux&logoColor=white" />
 </p>
 
@@ -61,7 +61,6 @@ pip install -r requirements.txt
 py -m PyInstaller --onefile --noconsole --clean \
   --name PoseLandmarkSender app.py \
   --add-data ".venv\Lib\site-packages\mediapipe\modules;mediapipe\modules"
-
 copy config.json dist\
 
 # macOS/Linux
@@ -69,7 +68,6 @@ python -m PyInstaller --onedir --clean \
   --target-arch arm64 \
   --name PoseLandmarkSender app.py \
   --add-data ".venv/lib/python3.11/site-packages/mediapipe/modules:mediapipe/modules"
-
 cp config.json "dist/PoseLandmarkSender.app/Contents/MacOS/"
 xattr -dr com.apple.quarantine "dist/PoseLandmarkSender.app"
 ```
