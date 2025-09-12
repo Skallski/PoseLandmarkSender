@@ -21,4 +21,3 @@ class UdpJsonSender:
     def close(self):
         self.sock.close()
         self.log.info(f"{UdpJsonSender.__name__} closed successfully")
-

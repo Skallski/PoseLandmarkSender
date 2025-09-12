@@ -1,30 +1,91 @@
 import sys
-import json
-import os
-from pose_landmark_sender import PoseLandmarkSender
+import cv2
+import platform
+from logger import Logger
+from config_loader import ConfigLoader
+from pose_landmark_detector import PoseLandmarkDetector
+from payload_builder import PayloadBuilder
+from udp_json_sender import UdpJsonSender
+from preview import Preview
 
 
 if __name__ == "__main__":
-    if getattr(sys, 'frozen', False):
-        base_path = os.path.dirname(sys.executable)
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
 
-    config_path = os.path.join(base_path, "config.json")
+    logger = Logger.get()
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
+    # load config
+    try:
+        cfg = ConfigLoader.load_config()
+        logger.info("Config loaded successfully")
+    except FileNotFoundError as e:
+            logger.error(e)
+            sys.exit(1)
 
-    app = PoseLandmarkSender(
-        udp_ip = cfg.get("udp_ip", "127.0.0.1"),
-        udp_port = cfg.get("udp_port", 5005),
-        cam_index = cfg.get("cam_index", 0),
-        cam_requested_width = cfg.get("cam_requested_width", 640),
-        cam_requested_height = cfg.get("cam_requested_height", 360),
-        cam_requested_fps = cfg.get("cam_requested_fps", 30),
-        pose_model_complexity = cfg.get("pose_model_complexity", 1),
-        min_pose_detection_confidence = cfg.get("min_pose_detection_confidence", 0.5),
-        min_landmark_tracking_confidence = cfg.get("min_landmark_tracking_confidence", 0.5),
-        preview_mode = cfg.get("preview_mode", True)
+    # initialize scripts
+    pose_landmark_detector = PoseLandmarkDetector(
+        model_complexity = cfg.get("pose_model_complexity", 1),
+        min_detection_confidence = cfg.get("min_pose_detection_confidence", 0.5),
+        min_tracking_confidence = cfg.get("min_pose_landmark_tracking_confidence", 0.5)
     )
-    app.run()
+
+    payload_builder = PayloadBuilder()
+
+    sender = UdpJsonSender(
+        ip = cfg.get("udp_ip", "127.0.0.1"), 
+        port = cfg.get("udp_port", 5005)
+    )
+
+    preview = Preview(show_fps = True) if cfg.get("preview_mode", True) else None
+
+    # initialize webcam
+    cam_index = cfg.get("cam_index", 0)
+
+    os_name = platform.system().lower()
+    if os_name == "windows": cap = cv2.VideoCapture(cam_index, cv2.CAP_DSHOW)
+    elif os_name == "darwin": cap = cv2.VideoCapture(cam_index, cv2.CAP_AVFOUNDATION)
+    else: cap = cv2.VideoCapture(cam_index)
+
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cfg.get("cam_requested_width", 640))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cfg.get("cam_requested_height", 360))
+    cap.set(cv2.CAP_PROP_FPS, cfg.get("cam_requested_fps", 30))
+
+    # main loop
+    if not cap.isOpened():
+        logger.error("Application start error: Cannot open camera!")
+        sys.exit(1)
+
+    logger.info(f"Application started successfully")
+
+    try:
+        while cap.isOpened():
+            ok, frame = cap.read()
+            if not ok:
+                logger.error("Camera frame is empty! Closing app...")
+                break
+
+            pose_landmarks = pose_landmark_detector.get_landmarks(frame)
+
+            # send payload
+            landmarks_payload, frame_payload = payload_builder.build_payload(pose_landmarks, frame)
+            if landmarks_payload:
+                sender.send(landmarks_payload)
+            if frame_payload:
+                sender.send(frame_payload)
+
+            # preview
+            if preview is not None and pose_landmarks is not None:
+                preview.show_preview(frame, pose_landmarks)
+                if preview.trigger_close_window():
+                    break
+
+    except Exception as e:
+        logger.error(e)
+    finally:
+        cap.release()
+
+        if preview is not None:
+            preview.close()
+
+        pose_landmark_detector.close()
+        sender.close()
+        logger.info("Application closed successfully")
