@@ -10,9 +10,9 @@ class PayloadBuilder:
         landmark_visibility_threshold: float = 0.5,
         jpeg_quality: int = 70,
         max_size: int = 60 * 1024,
-        quality_floor: int = 20,
-        scales: tuple[float, ...] = (0.75, 0.5, 0.35, 0.25),
-        quality_steps: tuple[int, ...] = (70, 60, 50, 40, 30)
+        quality_floor: int = 10,
+        scales: tuple[float, ...] = (0.75, 0.5, 0.35, 0.25, 0.15, 0.1),
+        quality_steps: tuple[int, ...] = (70, 60, 50, 40, 30, 20, 10)
     ):        
         self.landmark_visibility_threshold = landmark_visibility_threshold
         self.jpeg_quality = jpeg_quality
@@ -21,12 +21,7 @@ class PayloadBuilder:
         self.scales = scales
         self.quality_steps = quality_steps
 
-    def build_payload(self, landmarks, frame):
-        landmarks_payload = self._build_pose_landmarks_payload(landmarks)            
-        frame_payload = self._build_frame_payload(frame)
-        return landmarks_payload, frame_payload
-
-    def _build_pose_landmarks_payload(self, landmarks):
+    def build_pose_landmarks_payload(self, landmarks):
         """
         Format landmarks as {"pts":[{x,y,z},...]}
 
@@ -55,7 +50,7 @@ class PayloadBuilder:
 
         return {"pts": pts}
 
-    def _build_frame_payload(self, frame):
+    def build_frame_payload(self, frame):
         """JPEG encoded as base64 with size limit"""
         if frame is None:
             return None

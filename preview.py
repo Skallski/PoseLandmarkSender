@@ -7,9 +7,18 @@ from logger import Logger
 class Preview:
     PREVIWEW_WINDOW_NAME = "Pose Landmark Sender"
 
-    def __init__(self, show_fps: bool = True):
+    def __init__(
+        self, 
+        show_fps: bool = True,
+        pose_detection_bound_left: float = 0.25,
+        pose_detection_bound_right: float = 0.75
+    ):
         self.show_fps = show_fps
         self.fps_counter_last_time = 0
+
+        self.pose_detection_bound_left = pose_detection_bound_left
+        self.pose_detection_bound_right = pose_detection_bound_right
+
         self.logger = Logger.get()
         self.logger.info(f"{Preview.__name__} initialized successfully")
 
@@ -23,6 +32,11 @@ class Preview:
             self.fps_counter_last_time = curr_time
             cv2.putText(frame, f"FPS: {int(fps)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
+        frame = self._get_frame_with_bounds_drawn(
+            frame, 
+            color = (0, 255, 0) if landmarks is not None else (0, 0, 255)
+        )
+
         if landmarks is not None:
             frame = self._get_frame_with_landmarks_drawn(frame, landmarks)
 
@@ -35,6 +49,18 @@ class Preview:
                 landmarks,
                 mp.solutions.pose.POSE_CONNECTIONS
             )
+        return frame
+    
+    def _get_frame_with_bounds_drawn(self, frame, color):
+        height, width, _ = frame.shape
+        left_x = int(self.pose_detection_bound_left * width)
+        right_x = int(self.pose_detection_bound_right * width)
+
+        thickness = 2
+
+        cv2.line(frame, (left_x, 0), (left_x, height), color, thickness)
+        cv2.line(frame, (right_x, 0), (right_x, height), color, thickness)
+
         return frame
 
     def trigger_close_window(self) -> bool:

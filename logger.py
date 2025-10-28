@@ -1,3 +1,4 @@
+import sys
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -6,7 +7,8 @@ class Logger:
     _logger = None
 
     @classmethod
-    def get(cls,
+    def get(
+        cls,
         name: str = "PoseLandmarkSender",
         filename: str = "PoseLandmarkSender.log",
         level: int = logging.INFO,
@@ -24,6 +26,11 @@ class Logger:
 
         logger = logging.getLogger(name)
         logger.setLevel(level)
+        logger.propagate = False
+        logger.disabled = False
+
+        for h in list(logger.handlers):
+            logger.removeHandler(h)
 
         fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
@@ -38,6 +45,11 @@ class Logger:
         file_handler.setFormatter(fmt)
         file_handler.setLevel(level)
         logger.addHandler(file_handler)
+
+        console_handler = logging.StreamHandler(stream=sys.stdout)
+        console_handler.setFormatter(fmt)
+        console_handler.setLevel(level)
+        logger.addHandler(console_handler)
 
         cls._logger = logger
         return cls._logger
