@@ -17,7 +17,7 @@ Real-time pose landmark detection and transmission over UDP
 Pose Landmark Sender performs **real-time pose landmark detection** from webcam input using [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker?hl=en).  
 
 - Runs entirely on **CPU**  
-- Outputs **detected landmarks** and **base64 encoded frame**
+- Outputs **detected landmarks** and optional **base64 encoded frame**
 - Data is serialized to **JSON** and streamed via **UDP**  
 
 ---
@@ -89,27 +89,38 @@ xattr -dr com.apple.quarantine "dist/PoseLandmarkSender.app"
   "pose_model_complexity": 1,
   "min_pose_detection_confidence": 0.5,
   "min_landmark_tracking_confidence": 0.5,
+  "pose_detection_bound_left": 0.25,
+  "pose_detection_bound_right": 0.75,
+  "pose_detection_feet_bound_top": 0.1,
+  "pose_detection_feet_bound_bottom": 0.3,
+
+  "send_frame_payload": false,
 
   "preview_mode": true
 }
 ```
-| Parameter                       | Description                                                           |
-|---------------------------------|-----------------------------------------------------------------------|
-| `udp_ip`                        | Target IP address for UDP packets                                     |
-| `udp_port`                      | Target port for UDP packets                                           |
-| `cam_index`                     | OS camera index (0 = default webcam)                                  |
-| `cam_requested_width`           | Requested capture width (may be capped by the camera)                  |
-| `cam_requested_height`          | Requested capture height (may be capped by the camera)                 |
-| `cam_requested_fps`             | Requested capture FPS (may be capped by the camera)                    |
-| `pose_model_complexity`         | Model size/accuracy trade-off: 0 (fastest), 1 (default), 2 (most accurate) |
-| `min_pose_detection_confidence` | Minimum confidence threshold to accept a person detection              |
-| `min_landmark_tracking_confidence` | Minimum confidence threshold to accept landmark tracking updates    |
-| `preview_mode`                  | Show a local preview window when `true`                               |
+| Parameter                          | Description                                                                |
+|------------------------------------|----------------------------------------------------------------------------|
+| `udp_ip`                           | Target IP address for UDP packets                                          |
+| `udp_port`                         | Target port for UDP packets                                                |
+| `cam_index`                        | OS camera index (0 = default webcam)                                       |
+| `cam_requested_width`              | Requested capture width (may be capped by the camera)                      |
+| `cam_requested_height`             | Requested capture height (may be capped by the camera)                     |
+| `cam_requested_fps`                | Requested capture FPS (may be capped by the camera)                        |
+| `pose_model_complexity`            | Model size/accuracy trade-off: 0 (fastest), 1 (default), 2 (most accurate) |
+| `min_pose_detection_confidence`    | Minimum confidence threshold to accept a person detection                  |
+| `min_landmark_tracking_confidence` | Minimum confidence threshold to accept landmark tracking updates           |
+| `pose_detection_bound_left`        | Normalized left boundary (0–1) for the pose detection area                 |
+| `pose_detection_bound_right`       | Normalized right boundary (0–1) for the pose detection area                |
+| `pose_detection_feet_bound_top` | Normalized top boundary (0–1) for feet — helps estimate user distance from the camera <br> (the farther the user stays, the higher their feet appear in the frame) |
+| `pose_detection_feet_bound_bottom` | Normalized bottom boundary (0–1) for feet — helps estimate user distance from the camera <br> (the farther the user stays, the higher their feet appear in the frame)   |
+| `send_frame_payload` 			     | Build and send frame data payload when `true` (useful for debugging, increases bandwidth usage)   |
+| `preview_mode`                     | Show a local preview window when `true`                                    |
 
 ---
 
 ### UDP payload
-Sender emits *two independent JSON packets per iteration*: one with *landmarks* and one with the *frame*.
+Sender emits *two independent JSON packets per iteration*: one with *landmarks* and optional one with the *frame*.
 * 33 pose *Landmarks*: `{"pts": [{x, y, z}, ...]}` in MediaPipe , image-normalized convention (`x, y ∈ [0, 1]`. `z` is normalized depth, negative in front of the camera). If a landmark is not visible, the sender returns `-1` for `x`, `y`, and `z`.  
 * *Frame* metadata `{"frame_b64":"<base64 JPEG>"}` - a Base64-encoded JPEG of the current frame.  
 
