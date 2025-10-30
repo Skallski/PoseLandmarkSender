@@ -23,13 +23,17 @@ if __name__ == "__main__":
     # initialize scripts
     pose_detection_bound_left = cfg.get("pose_detection_bound_left", 0.25)
     pose_detection_bound_right = cfg.get("pose_detection_bound_right", 0.75)
+    pose_detection_feet_bound_top = cfg.get("pose_detection_feet_bound_top", 0.1)
+    pose_detection_feet_bound_bottom = cfg.get("pose_detection_feet_bound_bottom", 0.2)
 
     pose_landmark_detector = PoseLandmarkDetector(
         model_complexity = cfg.get("pose_model_complexity", 1),
         min_detection_confidence = cfg.get("min_pose_detection_confidence", 0.5),
         min_tracking_confidence = cfg.get("min_pose_landmark_tracking_confidence", 0.5),
         pose_detection_bound_left = pose_detection_bound_left,
-        pose_detection_bound_right = pose_detection_bound_right
+        pose_detection_bound_right = pose_detection_bound_right,
+        pose_detection_feet_bound_top = pose_detection_feet_bound_top,
+        pose_detection_feet_bound_bottom = pose_detection_feet_bound_bottom
     )
 
     send_frame_payload = cfg.get("send_frame_payload", False)
@@ -44,8 +48,10 @@ if __name__ == "__main__":
     if cfg.get("preview_mode", True):
         preview = Preview(
             show_fps = True,
-            pose_detection_bound_left = pose_detection_bound_left,
-            pose_detection_bound_right = pose_detection_bound_right
+            bound_left = pose_detection_bound_left,
+            bound_right = pose_detection_bound_right,
+            pose_detection_feet_bound_top = pose_detection_foot_y_min,
+            bound_feet_bottom = pose_detection_knee_y_min
         )
     else:
         preview = None

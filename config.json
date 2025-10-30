@@ -12,7 +12,8 @@
     "min_landmark_tracking_confidence": 0.5,
     "pose_detection_bound_left": 0.25,
     "pose_detection_bound_right": 0.75,
-    "pose_detection_max_distance_from_camera": 3,
+    "pose_detection_feet_bound_top": 0.1,
+    "pose_detection_feet_bound_bottom": 0.3,
 
     "send_frame_payload": false,
 
