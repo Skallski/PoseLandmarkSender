@@ -4,6 +4,7 @@ import platform
 from logger import Logger
 from config_loader import ConfigLoader
 from pose_landmark_detector import PoseLandmarkDetector
+from pose_bounds_checker import PoseBoundsChecker
 from payload_builder import PayloadBuilder
 from udp_json_sender import UdpJsonSender
 from preview import Preview
@@ -20,7 +21,8 @@ if __name__ == "__main__":
         logger.error(e)
         sys.exit(1)
 
-    # initialize scripts
+    # initialize landmark detector and bounds checker
+    min_landmark_tracking_confidence = cfg.get("min_landmark_tracking_confidence", 0.5),
     pose_detection_bound_left = cfg.get("pose_detection_bound_left", 0.25)
     pose_detection_bound_right = cfg.get("pose_detection_bound_right", 0.75)
     pose_detection_feet_bound_top = cfg.get("pose_detection_feet_bound_top", 0.1)
@@ -29,29 +31,33 @@ if __name__ == "__main__":
     pose_landmark_detector = PoseLandmarkDetector(
         model_complexity = cfg.get("pose_model_complexity", 1),
         min_detection_confidence = cfg.get("min_pose_detection_confidence", 0.5),
-        min_tracking_confidence = cfg.get("min_pose_landmark_tracking_confidence", 0.5),
-        pose_detection_bound_left = pose_detection_bound_left,
-        pose_detection_bound_right = pose_detection_bound_right,
-        pose_detection_feet_bound_top = pose_detection_feet_bound_top,
-        pose_detection_feet_bound_bottom = pose_detection_feet_bound_bottom
+        min_tracking_confidence = min_landmark_tracking_confidence,
     )
 
+    pose_bounds_checker = PoseBoundsChecker(
+        landmark_visibility_threshold = min_landmark_tracking_confidence,
+        bound_left = pose_detection_bound_left,
+        bound_right = pose_detection_bound_right,
+        feet_bound_top = pose_detection_feet_bound_top,
+        feet_bound_bottom = pose_detection_feet_bound_bottom
+    )
+
+    # initialize payload boulder and sender
     send_frame_payload = cfg.get("send_frame_payload", False)
-
     payload_builder = PayloadBuilder()
-
     sender = UdpJsonSender(
         ip = cfg.get("udp_ip", "127.0.0.1"), 
         port = cfg.get("udp_port", 5005)
     )
 
+    # initialize preview
     if cfg.get("preview_mode", True):
         preview = Preview(
             show_fps = True,
             bound_left = pose_detection_bound_left,
             bound_right = pose_detection_bound_right,
-            pose_detection_feet_bound_top = pose_detection_foot_y_min,
-            bound_feet_bottom = pose_detection_knee_y_min
+            bound_feet_top = pose_detection_feet_bound_top,
+            bound_feet_bottom = pose_detection_feet_bound_bottom
         )
     else:
         preview = None
@@ -84,19 +90,30 @@ if __name__ == "__main__":
 
             pose_landmarks = pose_landmark_detector.get_landmarks(frame)
 
-            # build & send payloads
-            landmarks_payload = payload_builder.build_pose_landmarks_payload(pose_landmarks)
-            if landmarks_payload:
-                sender.send(landmarks_payload)
+            # check bounds
+            pose_inside_horizontal_bounds = pose_bounds_checker.pose_inside_horizontal_bounds(pose_landmarks)
+            pose_inside_vertical_bounds = pose_bounds_checker.pose_inside_vertical_bounds(pose_landmarks)
 
-            if send_frame_payload:
-                frame_payload = payload_builder.build_payload(frame)
-                if frame_payload:
-                    sender.send(frame_payload)
+            # build & send payloads
+            if pose_inside_horizontal_bounds and pose_inside_vertical_bounds:
+                landmarks_payload = payload_builder.build_pose_landmarks_payload(pose_landmarks)
+                if landmarks_payload:
+                    sender.send(landmarks_payload)
+
+                if send_frame_payload:
+                    frame_payload = payload_builder.build_frame_payload(frame)
+                    if frame_payload:
+                        sender.send(frame_payload)
 
             # preview
             if preview is not None:
-                preview.show_preview(frame, pose_landmarks)
+                preview.show_preview(
+                    frame, 
+                    pose_landmarks, 
+                    pose_inside_horizontal_bounds, 
+                    pose_inside_vertical_bounds
+                )
+                
                 if preview.trigger_close_window():
                     break
 

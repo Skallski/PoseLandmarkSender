@@ -26,7 +26,13 @@ class Preview:
         self.logger = Logger.get()
         self.logger.info(f"{Preview.__name__} initialized successfully")
 
-    def show_preview(self, frame, landmarks):
+    def show_preview(
+        self, 
+        frame, 
+        landmarks, 
+        pose_inside_horizontal_bounds, 
+        pose_inside_vertical_bounds
+    ):
         if frame is None:
             return
 
@@ -39,7 +45,8 @@ class Preview:
         frame = self._get_frame_with_bounds_drawn(
             frame, 
             landmarks,
-            color = (0, 255, 0) if landmarks is not None else (0, 0, 255)
+            pose_inside_horizontal_bounds,
+            pose_inside_vertical_bounds
         )
 
         if landmarks is not None:
@@ -56,21 +63,30 @@ class Preview:
             )
         return frame
     
-    def _get_frame_with_bounds_drawn(self, frame, color):
+    def _get_frame_with_bounds_drawn(
+        self, 
+        frame, 
+        pose_inside_horizontal_bounds, 
+        pose_inside_vertical_bounds
+    ):
         thickness = 2
         height, width, _ = frame.shape
 
         # horizontal bounds
         left_x = int(self.bound_left * width)
         right_x = int(self.bound_right * width)
-        cv2.line(frame, (left_x, 0), (left_x, height), color, thickness)
-        cv2.line(frame, (right_x, 0), (right_x, height), color, thickness)
+
+        color_horizontal_bounds = (0, 255, 0) if pose_inside_horizontal_bounds else (0, 0, 255)
+        cv2.line(frame, (left_x, 0), (left_x, height), color_horizontal_bounds, thickness)
+        cv2.line(frame, (right_x, 0), (right_x, height), color_horizontal_bounds, thickness)
 
         # vertical bounds
         top_y = int((1.0 - self.bound_feet_top) * height)
         bottom_y = int((1.0 - self.bound_feet_bottom) * height)
-        cv2.line(frame, (0, top_y), (width, top_y), color, thickness)
-        cv2.line(frame, (0, bottom_y), (width, bottom_y), color, thickness)
+
+        color_vertical_bounds = (0, 255, 0) if pose_inside_vertical_bounds else (0, 0, 255)
+        cv2.line(frame, (0, top_y), (width, top_y), color_vertical_bounds, thickness)
+        cv2.line(frame, (0, bottom_y), (width, bottom_y), color_vertical_bounds, thickness)
 
         return frame
 
