@@ -25,8 +25,8 @@ class PoseLandmarkDetector:
             static_image_mode = False,
             model_complexity = model_complexity_valid,
             enable_segmentation = False,
-            min_detection_confidence = self.max(0.0, min(1.0, float(min_detection_confidence))),
-            min_tracking_confidence = self.max(0.0, min(1.0, float(min_tracking_confidence)))
+            min_detection_confidence = max(0.0, min(1.0, float(min_detection_confidence))),
+            min_tracking_confidence = max(0.0, min(1.0, float(min_tracking_confidence)))
         )
 
         self.logger.info(f"{PoseLandmarkDetector.__name__} initialized successfully")

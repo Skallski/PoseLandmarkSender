@@ -44,7 +44,6 @@ class Preview:
 
         frame = self._get_frame_with_bounds_drawn(
             frame, 
-            landmarks,
             pose_inside_horizontal_bounds,
             pose_inside_vertical_bounds
         )

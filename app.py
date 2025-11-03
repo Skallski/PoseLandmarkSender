@@ -22,7 +22,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # initialize landmark detector and bounds checker
-    min_landmark_tracking_confidence = cfg.get("min_landmark_tracking_confidence", 0.5),
+    min_landmark_tracking_confidence = cfg.get("min_landmark_tracking_confidence", 0.5)
     pose_detection_bound_left = cfg.get("pose_detection_bound_left", 0.25)
     pose_detection_bound_right = cfg.get("pose_detection_bound_right", 0.75)
     pose_detection_feet_bound_top = cfg.get("pose_detection_feet_bound_top", 0.1)
